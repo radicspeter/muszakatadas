@@ -1,0 +1,25 @@
+Sub Rendez()
+'
+' Makró3 Makró
+'
+
+Dim Copyrange As String
+Dim lastColumn As Long
+Dim lastrow As Long
+lastrow = Range("D" & Rows.Count).End(-4162).Row 'Meghatározza az aktuális táblázat méretét
+lastColumn = Sheet1.Cells(1, Columns.Count).End(xlToLeft).Column
+Let Copyrange = "C1:C" & lastrow
+'MsgBox lastColumn
+    ActiveWorkbook.Worksheets("Átadás").Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Átadás").Sort.SortFields.Add(Range(Copyrange), _
+        xlSortOnCellColor, xlDescending, , xlSortNormal).SortOnValue.Color = RGB(0, 255 _
+        , 0)
+    With ActiveWorkbook.Worksheets("Átadás").Sort
+        .SetRange Range(Cells(1, 1), Cells(lastrow, lastColumn))
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+End Sub
