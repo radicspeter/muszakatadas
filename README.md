@@ -1,1 +1,1 @@
-![alt text](http://www.kepfeltoltes.eu/view.php?filename=537_tmutat_.png)
+![alt text](http://www.kepfeltoltes.eu/images/2019/01/537_tmutat_.png)
