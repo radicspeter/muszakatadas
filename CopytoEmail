@@ -1,0 +1,307 @@
+Public Sub CopyMailtoExcel()
+    Dim objOL As Outlook.Application
+    'Dim objFolder As Outlook.Folder
+    Dim objFolder As Object 'As Outlook.Folder
+    Dim objDestFolder As Object 'Dest VOIP folder
+    Dim objItems As Outlook.Items
+    Dim olItem As Object ' MailItem
+    Dim strDisplayName, strAttCount, strBody, strDeleted As String
+    Dim r1 As Range
+    Dim r2 As Range
+    Dim strReceived As Date
+    Dim strNow As Date
+    Dim strdiff As Integer
+    'Dim datum As Date
+    Dim rCount As Long
+    Dim mVoip As Long
+    Dim cOnsite As Long
+    'Dim sTicket As Long
+    Dim vanBenne As Boolean
+    Dim megszVanBenne As Boolean
+    Dim vanTomb As Boolean
+    Dim short_desc As String
+    Dim Firstname As String
+    Dim Lastname As String
+    Dim Details As String
+    Dim linkToTicket As String
+    Dim array_example()
+    megsz = Array("voip", "VOICE", "DECT", "PIN kód", "Apple") ' "Telefon" ,"telephone", "Mobiltelefon" A levél tárgyában való megszorításokat tartalmazza
+    'megsz2 = Array("VOICE") 'A levél törzsében való megszorítások tömbje
+    Dim vanTargy As Boolean
+    'Dim vanTorzs As Boolean
+    'MsgBox (UBound(megsz))
+    
+'  On Error GoTo Err_Execute
+    Application.ScreenUpdating = False
+ 
+'Find the next empty line of the worksheet
+    rCount = Range("D" & Rows.Count).End(-4162).Row
+    vanTomb = False
+    'MsgBox "RCount értéke az elején " & rCount
+'last_row = Range("C1").End(xlDown).Row 'Nem jó amikor üres...
+    If rCount > 1 Then ' HA több mint 1 sor van akkor hozzuk létre a tömböt neki, és tároljuk el az adatokat
+        ReDim array_example(rCount - 2)
+        strNow = Now
+        For i = 0 To rCount - 2
+            array_example(i) = Range("D" & i + 2)
+            Set r1 = Range("B" & i + 2)
+            Set r2 = Range("A" & i + 2)
+            strdiff = DateDiff("d", r2, strNow)
+            If r1.Value <> strdiff Then
+                r1.Value = strdiff 'frissíti a TT idejét
+                If r1.Value >= 5 Then r1.Interior.Color = vbRed 'Ha nagyobb az értéke mint X akkor PIROS
+            'ElseIf r1.Value >= 5 Then 'Ha valaki törölné a kitöltés színének a formázását...
+                'r1.Interior.Color = vbRed
+            End If
+            vanTomb = True
+            'MsgBox (array_example(i))
+            'MsgBox (rCount)
+        Next i
+    End If
+'Declaration
+    rCount = rCount + 1
+
+    Set objOL = Outlook.Application
+    
+' copy mail to excel
+'Set objFolder = objOL.ActiveExplorer.CurrentFolder
+    Set objFolder = Session.GetDefaultFolder(olFolderInbox).Folders("CISM")
+    'Set objDestFolder = Session.GetDefaultFolder(olFolderInbox).Folders("VOIP")
+'Set objOL.ActiveExplorer.CurrentFolder = objFolder
+    Set objItems = objFolder.Items
+    mVoip = 0
+    cOnsite = 0
+    'datum = Date - 7
+    'MsgBox datum
+    For Each olItem In objItems
+'strAttCount = ""
+    strBody = ""
+    strBody = olItem.Body
+'If olItem.Attachments.Count > 0 Then strAttCount = "Yes"
+
+    On Error Resume Next
+ 'collect the fields
+    
+    
+' Remove this block if you don't want to remove the hyperlinked urls
+    Dim Reg1 As RegExp
+    Dim Match, Matches
+    Set Reg1 = New RegExp
+
+' remove hyperlinks from bodies for easier reading.
+    With Reg1
+        .Pattern = "<[src|http|https|mailto](.*)>(\s)*"
+        .Global = True
+        .IgnoreCase = True
+    
+    .MultiLine = True
+
+    End With
+    
+    If Reg1.Test(strBody) Then
+        strBody = Reg1.Replace(strBody, "")
+    End If
+' end remove hyperlinks block
+
+'Dim txt As String
+'txt = "CISM / Ticket Assignment / Incident 0041980298 / Priority  3 / CI SLA Code 2 / [371][P][PK] - plus hardwarestörung allgemein M371PLMOA001496 [0041980298]"
+
+    Dim re1 As String
+    re1 = ".*?"   'Non-greedy match on filler
+    Dim re2 As String
+    re2 = "(\d+)" 'Integer Number 1
+
+    Dim r As New RegExp
+    r.Pattern = re1 + re2
+    r.IgnoreCase = True
+    Dim m As MatchCollection
+    Set m = r.Execute(olItem.Subject)
+    If m.Item(0).SubMatches.Count > 0 Then
+      Dim int1
+      int1 = m.Item(0).SubMatches.Item(0)
+      'MsgBox (int1)
+    End If
+
+'MsgBox (rCount)
+    If vanTomb = True Then
+'MsgBox UBound(array_example) 'Visszaadja az elemek számát a tombben 0-->1 elem van a tombben
+        vanBenne = False
+'MsgBox (UBound(array_example))
+            For x = 0 To UBound(array_example)
+                'MsgBox (array_example(x))
+                'MsgBox Abs(int1)
+                If vanBenne = False And array_example(x) = Abs(int1) Then 'olItem.Subject Then
+                    'MsgBox "Van ilyen elem a tombben"
+                    vanBenne = True
+                End If
+            Next x
+    End If
+               
+    If vanBenne = False Then 'Tehát uj elemről van szó ami nincs a tömbben még benne
+        megszVanBenne = False
+        'vanTargy = False
+        'vanTorzs = False
+        
+        For y = 0 To UBound(megsz)
+            'MsgBox (olItem.Subject)
+            If megszVanBenne = False And (InStr(1, UCase(olItem.Subject), UCase(megsz(y)), vbBinaryCompare) > 0 Or InStr(1, UCase(strBody), UCase(megsz(y)), vbBinaryCompare) > 0) Then 'Tárgyban való szűrés
+                'MsgBox ("Voice Ticketet talált a subject vagy tárgy részben " & olItem.Subject)
+                'olItem.Move objDestFolder
+                
+                'MsgBox megsz(y)
+                'Dim szam_kezd As Integer
+                'szam_kezd = InStr(1, UCase(olItem.Subject), UCase(megsz(y)), vbBinaryCompare)
+                'MsgBox szam_kezd
+                'szam_kezd = InStr(1, UCase(strBody), UCase(megsz(y)), vbBinaryCompare)
+                'MsgBox szam_kezd
+                
+                megszVanBenne = True
+                'vanTargy = True
+                mVoip = mVoip + 1
+                'MsgBox (mVoip)
+            End If
+        Next y
+        
+        If megszVanBenne = False Then   'And vanTargy = False
+            cOnsite = cOnsite + 1
+            strBody = Trim(strBody)
+            Details = Split(strBody, "Details:")(1)
+            linkToTicket = Split(strBody, "Link to Ticket:  ")(1)
+            linkToTicket = Split(linkToTicket, vbNewLine)(0)
+            'MsgBox linkToTicket
+            short_desc = Split(strBody, "Short Description:")(1)
+            Firstname = "" 'HA nem lenne név, akkor üres értéket ad neki
+            Firstname = Split(strBody, "Firstname:")(1)
+            Firstname = Split(Firstname, "Lastname:")(0)
+            Lastname = "" 'HA nem lenne név, akkor üres értéket ad neki
+            Lastname = Split(strBody, "Lastname:")(1)
+            Lastname = Split(Lastname, vbNewLine)(0)
+            short_desc = Split(short_desc, "Problemart")(0)
+            short_desc = Split(short_desc, vbNewLine)(0)
+            strReceived = olItem.ReceivedTime
+            strNow = Now
+            'MsgBox strNow
+            'MsgBox strReceived
+            strdiff = DateDiff("d", strReceived, strNow)
+            'MsgBox strdiff
+            strSender = olItem.SenderName
+
+' column / field
+' A Date
+' B Time
+' C Attachments (Yes)
+' D Subject
+' E Body
+' F From (display name)
+' G To (display name)
+' H CC (display name)
+' I BCC (sent items only)
+
+'write them in the excel sheet
+            Range("A" & rCount) = strReceived ' format using short date
+            If strdiff >= 5 Then
+                Range("B" & rCount) = strdiff
+                Range("B" & rCount).Interior.Color = vbRed
+                Else: Range("B" & rCount) = strdiff 'format using time
+            End If
+ 'Range("C" & rCount) = strAttCount
+            With ActiveSheet
+             .Hyperlinks.Add Anchor:=.Range("D" & rCount), _
+             Address:=linkToTicket, _
+             ScreenTip:=Details, _
+             TextToDisplay:=int1 'TT number
+            End With
+            'ActiveSheet.Hyperlinks.Add(Anchor:=.Range("D" & rCount),Address:="http://example.microsoft.com",ScreenTip:="Microsoft Web Site",TextToDisplay:=int1)
+            'Range("D" & rCount) = int1 'olItem.Subject
+            Range("C" & rCount) = Lastname & Firstname & ": " & short_desc
+            'Set WrkSht = Sheets(“Átadás”)
+            'Set cb = ActiveSheet.CheckBoxes.Add(Cells(rCount, "E").Left, Cells(rCount, "E").Top, 25, 17, 25).Select
+            'Set cb = ActiveSheet.CheckBoxes.Add(Cells(rCount, "E").Left, Cells(rCount, "E").Top, 25, 17.25).Select
+            'cb.Top = Range("E" & rCount).Top + Range("E" & rCount).Height / 2 - cb.Height / 2
+            'cb.Left = Range("E" & rCount).Left + Range("E" & rCount).Width / 2 - cb.Width / 2
+    'With Selection
+        '.Caption = ""
+        '.Value = xlOff '
+        '.Display3DShading = False
+    'End With
+            'Range("E" & rCount) = cb
+ 'Range("F" & rCount) = strSender
+ 'Range("G" & rCount) = olItem.To
+ 'Range("H" & rCount) = olItem.CC
+ 'Range("I" & rCount) = olItem.BCC
+            rCount = rCount + 1
+        End If
+    End If
+'Next row
+    
+    Next
+    
+Call Rendez
+'Set sTicket = cOnsite + mVoip 'Az összes feldolgozott emailek száma
+
+'Formazasok
+Columns("A:D").Select
+With Selection
+    .WrapText = False 'Sortörés ne legyen
+    .HorizontalAlignment = xlGeneral
+    .VerticalAlignment = xlTop
+    '.Columns.AutoFit
+End With
+
+
+Range("A1:D1").Select
+ With Selection
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .RowHeight = 55
+End With
+
+
+' Date and Time
+Columns("A:A").Select
+Selection.NumberFormat = "[$-40E]mm/dd hh:mm;@"
+Selection.ColumnWidth = 10.57
+Selection.HorizontalAlignment = xlLeft
+Selection.EntireColumn.Hidden = True 'Ne zavarjon minket feleslegesen, csak a számításhoz kell
+
+Range("B:B").Select
+'Selection.NumberFormat = "hh:mm"
+Selection.ColumnWidth = 10.14
+Selection.HorizontalAlignment = xlCenter
+
+Range("D:D").Select
+Selection.ColumnWidth = 13
+Selection.HorizontalAlignment = xlCenter
+
+Columns("C").Select ' Incidents column
+Selection.ColumnWidth = 90
+    '.Rows.AutoFit
+
+
+Rows(rCount).Select
+
+
+
+'Range("A2").Select
+
+Application.ScreenUpdating = True
+Set olItem = Nothing
+Set objFolder = Nothing
+Set objOL = Nothing
+Set Reg1 = Nothing
+
+MsgBox cOnsite & " darab Onsite tickettel frissítve!" ' & vbNewLine & mVoip & " darab Decktes ticket megszűrve!"
+'xTitleId = "KutoolsforExcel"
+Exit Sub
+    
+Err_Execute:
+    MsgBox "Hiba történt a frissítés során!"
+    
+End Sub
+
+
+
+
+
+
+
