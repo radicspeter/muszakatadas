@@ -1,1 +1,1 @@
-![alt text](https://drive.google.com/file/d/1wK1isSUQInqTwLI7MbGs3OWPgtRNIw7X/view?usp=sharing)
+![alt text](http://www.kepfeltoltes.eu/view.php?filename=537_tmutat_.png)
